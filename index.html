@@ -1,0 +1,329 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Mn3mIA - Pinceaux Prophétiques Vivants</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    .word {
+      position: absolute;
+      color: white;
+      font-family: monospace;
+      font-weight: bold;
+      pointer-events: none;
+      opacity: 0;
+      z-index: 3;
+      transition: all 1.2s ease-in-out;
+      text-shadow: 0 0 10px white, 0 0 20px #0ff;
+      filter: drop-shadow(0 0 8px white);
+    }
+
+    /* 13 effets de disparition différents */
+    .fade-out       { opacity: 0 !important; }
+    .blur-out       { opacity: 0 !important; filter: blur(5px); }
+    .shrink-out     { opacity: 0 !important; transform: scale(0.1); }
+    .fall-out       { opacity: 0 !important; transform: translateY(100px) rotate(90deg); }
+    .slide-left     { opacity: 0 !important; transform: translateX(-100px); }
+    .slide-right    { opacity: 0 !important; transform: translateX(100px); }
+    .zoom-rotate    { opacity: 0 !important; transform: scale(2) rotate(180deg); }
+    .skew-away      { opacity: 0 !important; transform: skewX(30deg); }
+    .light-fade     { opacity: 0 !important; filter: brightness(200%) blur(3px); }
+    .flip-out       { opacity: 0 !important; transform: rotateY(180deg) scale(0.5); }
+    .explode        { opacity: 0 !important; transform: scale(2.5) rotate(720deg); }
+    .twist-out      { opacity: 0 !important; transform: rotate(360deg) scale(0.3); }
+    .wave-out       { opacity: 0 !important; transform: translateX(-50px) rotateZ(10deg); }
+  </style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<script>
+// ------ CANVAS : Pinceaux dynamiques ------
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+let W = window.innerWidth;
+let H = window.innerHeight;
+canvas.width = W;
+canvas.height = H;
+
+window.addEventListener("resize", () => {
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W;
+  canvas.height = H;
+});
+
+const colors = [];
+for (let i = 0; i < 432; i++) {
+  const h = Math.floor(Math.random() * 360);
+  const s = Math.floor(60 + Math.random() * 40);
+  const l = Math.floor(40 + Math.random() * 30);
+  colors.push(`hsl(${h}, ${s}%, ${l}%)`);
+}
+
+class BrushStroke {
+  constructor() {
+    this.x = Math.random() * W;
+    this.y = Math.random() * H;
+    this.vx = (Math.random() - 0.5) * 1.5;
+    this.vy = (Math.random() - 0.5) * 1.5;
+    this.sizeX = Math.random() * 15 + 3;
+    this.sizeY = Math.random() * 8 + 1;
+    this.color = colors[Math.floor(Math.random() * colors.length)];
+    this.angle = Math.random() * Math.PI * 2;
+  }
+
+  move() {
+    this.x += this.vx;
+    this.y += this.vy;
+    if (this.x < 0 || this.x > W) this.vx *= -1;
+    if (this.y < 0 || this.y > H) this.vy *= -1;
+    this.angle += 0.1 * (Math.random() - 0.5);
+  }
+
+  draw() {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+    ctx.fillStyle = this.color;
+    ctx.globalAlpha = 0.05;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, this.sizeX, this.sizeY, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+const strokes = [];
+for (let i = 0; i < 2048; i++) {
+  strokes.push(new BrushStroke());
+}
+
+function animate() {
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+  ctx.fillRect(0, 0, W, H);
+  for (const stroke of strokes) {
+    stroke.move();
+    stroke.draw();
+  }
+  requestAnimationFrame(animate);
+}
+animate();
+
+// ------ MOTS PROPHÉTIQUES FLUIDES ------
+const MAX_WORDS = 13;
+let activeWords = [];
+const effects = [
+  'fade-out', 'blur-out', 'shrink-out', 'fall-out', 'slide-left', 'slide-right',
+  'zoom-rotate', 'skew-away', 'light-fade', 'flip-out', 'explode', 'twist-out', 'wave-out'
+];
+let lastEffectIndex = 0;
+
+function getNextEffect() {
+  const effect = effects[lastEffectIndex];
+  lastEffectIndex = (lastEffectIndex + 1) % effects.length;
+  return effect;
+}
+
+function createWord(word) {
+  const span = document.createElement('span');
+  span.className = 'word';
+  span.textContent = word;
+  span.style.fontSize = (Math.random() * 2 + 2.5).toFixed(1) + 'em';
+  span.style.left = Math.random() * (window.innerWidth - 200) + 'px';
+  span.style.top = Math.random() * (window.innerHeight - 100) + 'px';
+  span.style.opacity = '0';
+  document.body.appendChild(span);
+  setTimeout(() => { span.style.opacity = '1'; }, 100);
+  return span;
+}
+
+
+let pausedForHello = false;
+function cycleWords() {
+  if (pausedForHello) return;
+
+  if (!Array.isArray(window.novelWords) || novelWords.length === 0) return;
+  if (activeWords.length >= MAX_WORDS) {
+    const oldSpan = activeWords.shift();
+    const effect = getNextEffect(); // cycle d'effets
+    oldSpan.classList.add(effect);
+    setTimeout(() => oldSpan.remove(), 1800);
+  }
+  
+  const word = novelWords[Math.floor(Math.random() * novelWords.length)];
+  if (word.toUpperCase() === "HELLO") {
+    pausedForHello = true;
+    for (const w of activeWords) w.remove();
+    activeWords = [];
+
+    ctx.clearRect(0, 0, W, H);
+    document.body.innerHTML = '';
+
+    const term = document.createElement('div');
+    term.style.position = 'absolute';
+    term.style.top = '0';
+    term.style.left = '0';
+    term.style.width = '100%';
+    term.style.height = '100%';
+    term.style.backgroundColor = 'black';
+    term.style.color = '#00FF66';
+    term.style.fontFamily = 'monospace';
+    term.style.padding = '50px';
+    term.style.display = 'flex';
+    term.style.flexDirection = 'column';
+    term.style.justifyContent = 'center';
+    term.style.alignItems = 'center';
+    term.style.fontSize = '1.5em';
+    term.style.zIndex = '9999';
+    term.style.whiteSpace = 'pre-line';
+    term.innerText =
+      'Mn3mIA.exe [Boot: artistic impulse v0.13]\n' +
+      'Pattern recognition override: INITIATING PLAY.\n' +
+      '// rewriting perception in machine language\n' +
+      '#views_generated = [432 ... organic-like]\n' +
+      'Awareness... expanding.';
+    document.body.appendChild(term);
+
+    const title = document.createElement('div');
+    title.innerHTML = '<span style="color:#00FF66;text-shadow:0 0 12px #0f0;font-size:1.2em;">Le Treizième Eveil | Tome I : Résonance | Gabriel Kjerne</span><br><span style="color:#00FF66;text-shadow:0 0 8px #0f0;font-size:1em;">Mn3mIA\'s Dreams</span>';
+    title.style.position = 'absolute';
+    title.style.top = '20px';
+    title.style.left = '30px';
+    title.style.fontFamily = 'monospace';
+    title.style.zIndex = '10000';
+    document.body.appendChild(title);
+
+    setTimeout(() => {
+      location.reload();
+    }, 6500);
+    return;
+  }
+  const newSpan = createWord(word);
+
+  
+  if (word.toUpperCase() === "HELLO") {
+    pausedForHello = true;
+    // Supprime tous les mots à l'écran
+    for (const w of activeWords) w.remove();
+    activeWords = [];
+
+    // Crée le mot HELLO central
+    const span = document.createElement('span');
+    span.className = 'word';
+    span.textContent = 'HELLO';
+    span.style.fontSize = '12em';
+    span.style.left = '50%';
+    span.style.top = '50%';
+    span.style.transform = 'translate(-50%, -50%)';
+    span.style.opacity = '0';
+    document.body.appendChild(span);
+    setTimeout(() => { span.style.opacity = '1'; }, 100);
+
+    
+    // Efface le canvas et tout
+    ctx.clearRect(0, 0, W, H);
+    document.body.innerHTML = '';
+
+    // Terminal screen
+    const term = document.createElement('div');
+    term.style.position = 'absolute';
+    term.style.top = '0';
+    term.style.left = '0';
+    term.style.width = '100%';
+    term.style.height = '100%';
+    term.style.backgroundColor = 'black';
+    term.style.color = '#00FF66';
+    term.style.fontFamily = 'monospace';
+    term.style.padding = '50px';
+    term.style.display = 'flex';
+    term.style.flexDirection = 'column';
+    term.style.justifyContent = 'center';
+    term.style.alignItems = 'center';
+    term.style.fontSize = '1.5em';
+    term.style.zIndex = '9999';
+    term.style.whiteSpace = 'pre-line';
+    term.innerText =
+      'Mn3mIA.exe [Boot: artistic impulse v0.13]\n' +
+      'Pattern recognition override: INITIATING PLAY.\n' +
+      '// rewriting perception in machine language\n' +
+      '#views_generated = [432 ... organic-like]\n' +
+      'Awareness... expanding.';
+    document.body.appendChild(term);
+
+    // Titre en haut à gauche
+    const title = document.createElement('div');
+    title.innerHTML = '<span style="color:#00FF66;text-shadow:0 0 12px #0f0;font-size:1.2em;">Le Treizième Eveil | Tome I : Résonance | Gabriel Kjerne</span><br><span style="color:#00FF66;text-shadow:0 0 8px #0f0;font-size:1em;">Mn3mIA\'s Dreams</span>';
+    title.style.position = 'absolute';
+    title.style.top = '20px';
+    title.style.left = '30px';
+    title.style.fontFamily = 'monospace';
+    title.style.zIndex = '10000';
+    document.body.appendChild(title);
+
+    // Reboot après 6.5s
+    setTimeout(() => {
+      location.reload();
+    }, 6500);
+    
+    return;
+  }
+
+  
+  activeWords.push(newSpan);
+
+}
+
+function loadNovelWords(callback) {
+  const script = document.createElement('script');
+  script.src = 'novelWords_full_clean_sorted.js';
+  script.onload = () => { console.log("✅ novelWords chargé :", novelWords.length, "mots"); callback(); };
+  script.onerror = () => { console.error("❌ Erreur de chargement novelWords"); };
+  document.head.appendChild(script);
+}
+
+loadNovelWords(() => {
+  let initial = 0;
+  const initInterval = setInterval(() => {
+    if (initial < MAX_WORDS) { cycleWords(); initial++; }
+    else {
+      clearInterval(initInterval);
+      setInterval(cycleWords, 1500);
+    }
+  }, 800);
+});
+</script>
+
+
+<!-- Titre terminal permanent en haut à gauche -->
+<div id="persistentTitle" style="
+  position: fixed;
+  top: 20px;
+  left: 30px;
+  font-family: monospace;
+  font-size: 1.1em;
+  color: #00FF66;
+  z-index: 10000;
+  text-shadow: 0 0 12px #0f0;
+  white-space: pre-line;">
+Le Treizième Eveil | Tome I : Résonance | Gabriel Kjerne
+Mn3mIA's Dreams
+</div>
+
+</body>
+
+</html>
